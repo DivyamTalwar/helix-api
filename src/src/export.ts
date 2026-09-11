@@ -20,18 +20,19 @@ export function resolveWindow(req: ExportRequest): ExportWindow | null {
 /** Human-readable label for the export header row. */
 export function describeWindow(req: ExportRequest): string {
   const window = resolveWindow(req);
+  if (!window) return "all time";
   return `${window.from} .. ${window.to}`;
 }
 
 /** Build the export query for one workspace and window. */
-export function exportSql(workspaceId: string, window: ExportWindow): string {
-  return (
-    "SELECT id, occurred_at, name FROM events" +
-    " WHERE workspace_id = '" + workspaceId + "'" +
-    " AND occurred_at >= '" + window.from + "'" +
-    " AND occurred_at < '" + window.to + "'" +
-    " ORDER BY occurred_at, id"
-  );
+export function exportSql(workspaceId: string, window: ExportWindow): { text: string; values: string[] } {
+  return {
+    text:
+      "SELECT id, occurred_at, name FROM events" +
+      " WHERE workspace_id = $1 AND occurred_at >= $2 AND occurred_at < $3" +
+      " ORDER BY occurred_at, id",
+    values: [workspaceId, window.from, window.to],
+  };
 }
 
 /** Count events by name across one page of the export. */
